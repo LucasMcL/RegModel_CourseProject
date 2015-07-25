@@ -1,0 +1,36 @@
+---
+title: "Transmission Type and MPG"
+author: "Lucas McLaughlin"
+date: "Saturday, July 25, 2015"
+output: pdf_document
+---
+#Summary
+This document contains an analysis of the mtcars dataset included in R.  In it, I seek to answer the following questions:
+
+1.  Is an automatic or manual transmission better for mpg?
+2.  Quantify the MPG difference between automatic and manual transmissions.
+
+In short, it is easy to see that cars that manual cars get better MPG.  Why that is, however, is not so obvious.  We will explore that question further.
+
+## MPG vs. Transmission Type
+An initial boxplot showing mpg for both automatic and manual cars (Figure 1)
+
+```{r, results='asis', echo=FALSE, message = F, warning = F, cache = TRUE}
+library(knitr)
+library(ggplot2)
+library(dplyr)
+library(GGally)
+data(mtcars)
+
+```
+
+
+
+
+\pagebreak
+
+#Appendix
+```{r}
+
+```
+
