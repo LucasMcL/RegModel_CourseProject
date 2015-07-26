@@ -22,7 +22,12 @@ mtcars <- mtcars %>% mutate(cyl = as.factor(as.character(cyl)),
 ```
 
 ```{r echo = FALSE}
-fit <- lm(mpg ~ am, data = mtcars)
+fit1 <- lm(mpg ~ am, data = mtcars)
+fit2 <- lm(mpg ~ ., data = mtcars)
+fit3 <- lm(mpg ~ am + wt + am * wt, data = mtcars)
+ct1 <- summary(fit1)$coefficients
+ct2 <- summary(fit2)$coefficients
+ct3 <- summary(fit3)$coefficients
 ```
 #Summary
 This document contains an analysis of the mtcars dataset included in R.  In it, I seek to answer the following questions:
@@ -30,17 +35,35 @@ This document contains an analysis of the mtcars dataset included in R.  In it, 
 1.  Is an automatic or manual transmission better for mpg?
 2.  Quantify the MPG difference between automatic and manual transmissions.
 
-In short, it is easy to see that cars that manual cars get better MPG.  Why that is, however, is not so obvious.  We will explore that question further.
+In short, it is easy to see that cars that manual cars get better MPG.  Understanding why though is a more complicated matter.  I believe the weight of the car is really the most important factor and in this document I hope to qauntify the MPG difference between automatic and manual cars by using linear models
 
 ## MPG vs. Transmission Type
-An initial boxplot showing mpg for both automatic and manual cars (fig 1) shows that manual cars have much better MPG on average.  In addition, fitting a simple linear model using only transmission type as a predictor (fig 2) helps quantify this difference.  According to our model, if we consider every other variable (such as car weight, engine size, etc.) to be unchanging and only consider the difference in transmission type, manual cars get on average `r round(summary(fit)$coefficients[2, 1], 1)` more MPG than automatic cars.  We can also say with 95% confidence that the true difference in MPG between automatic and manual cars lies in the interval (`r round(summary(fit)$coefficients[2, 1] + c(-2, 2) * summary(fit)$coefficients[2, 2], 1)`).  This is obtained by adding and subtracting 2 times the Standard Error (fig 2, column 2).  
-
-In short, we can see there is a non-trivial difference between mpg of automatic and manual cars.  However, this simple model only can get us so far.  It is somewhat nonsensical to talk about the only difference in two cars being the transmission system because this change would have an effect on other variables such as car weight (wt), rear axle ratio (drat), and number of forward gears (gear).  Could any of these variables be confounding the relationship between transmission type and MPG?  To answer this, let's further examine what variables are correlated with both transmission and mpg and then craft a more accurate linear model.
+An initial boxplot showing mpg for both automatic and manual cars (fig 1) shows that manual cars have much better MPG on average.  Specifically, our observed difference is `r round(mean(mtcars[mtcars$am == "Manual", ]$mpg) - mean(mtcars[mtcars$am == "Automatic", ]$mpg), 1)` MPG.  This is helpful initial information, but this observed difference can only tell us so much.  The transmission system of a car effects things like car weight, rear axle ratio, and number of forward gears.  These things have effects on engine size, horsepower, and so on.  To figure out which variables are really causing this noticable change in MPG, let's examine what variables are correlated with MPG and transmission type and then fit a linear model using that information.
 
 ## Characteristics of Automatic Cars
-Something we can to do explore the relationship of these variables is simply to look at correlation values (figs 3, 4).  Values closer to -1 and 1 indicate a stronger relationship.  We can then plot some of the characteristics associated automatic and manual cars (fig 5).  Automatic cars are heavier, have larger engines, more horespower, and weaker rear axle ratios.  In addition, the strongest variable associated with mpg is car weight (fig 6), so it's possible that automatic cars simply weigh more, thus requiring larger engines and getting lower mpg.  It's also interesting to note that weight has a greater effect on manual cars than automatic cars.  Linear models are ill-equiped to describe causation, but let's see if we can find a good linear model that takes into account these variable relationships.
+Something we can to do explore the relationship of these variables is simply to look at correlation values (fig 2).  Values closer to -1 and 1 indicate a stronger relationship.  We can then plot some of the things that are different between automatic and manual cars (fig 3).  Automatic cars are heavier, have larger engines, more horespower, and weaker rear axle ratios.  In addition, the strongest variable associated with mpg is car weight (fig 4), so it's possible that automatic cars simply weigh more, thus requiring larger engines and getting lower mpg.  It's also interesting to note that weight has a greater effect on manual cars than automatic cars.  Linear models are ill-equiped to describe causation, but let's see if we can find a good linear model that takes into account these variable relationships.
 
 ## Fitting the Best Linear Model
+Now, we will consider three linear models that describe the relationship between transmission and fuel efficiency.  The models are as follows:
+
+1.  MPG predicted by transmission type only.
+2.  MPG predicted by all variables available.
+3.  MPG predicted by transmission, weight, and their continuous interaction.
+
+###Interpreting Coefficients
+Here's what we can conclude from interpreting the coefficients of our models.
+
+####Model 1
+This model (fig 5) shows that the average MPG for automatic cars is `r round(ct1[1,1], 1)` and that the average MPG for manual cars is `r round(ct1[1,1], 1)` + `r round(ct1[2,1], 1)`, or `r round(ct1[1,1], 1) + round(ct1[2,1], 1)`.  This is essentially the imperical average that we previously observed, but this model now allows us to create a confidence interval.  Under this model, we can say with 95% confidence that the true difference in MPG between an automatic and manual car lies within the interval (`r round(ct1[2, 1] + c(-2, 2) * ct1[2, 2], 1)`).  This is done by taking our `r round(ct1[2,1], 1)` and adding/subtracting two times the standard error.
+
+####Model 2
+This model (fig 6) takes into account all varaibles available.  Under this model, our estimate for the difference in MPG between a manual and automatic car is much lower at `r round(ct2[10, 1], 1)` and our confidence interval is (`r round(ct2[10, 1] + c(-2, 2) * ct2[10, 2], 1)`)  I believe this lower value is caused by two things.  Firstly, the model takes into account counfounding variables that really may be having a greater impact on on MPG, thus taking emphasis off the transmission variable.  Second, the model introduces greater variance in our regression variables due to the larger number of predictor variables included.
+
+####Model 3
+This final model (fig 7) seeks to describe how weight affects mpg for both automatic and manual cars.  This model shows us that automatic cars have a `r round(ct3[3, 1], 1)` decrease in MPG for every 1000lb increase in car weight, whereas manual cars have a 'r round `r round(ct3[3, 1], 1)` + (`r round(ct3[4, 1], 1)`), or `r round(ct3[3, 1] + ct3[4, 1], 1)` decrease in MPG for every 1000lb increase in car weight.  In other words, manual cars handle car weight increase poorly, but since manual cars tend to be lighter they still come out ahead in MPG.
+
+###Diagnostics
+Lastly, let's briefly look at some residual plots and variance diagnostics of our models to help diagnose their efficacy.  
 
 
 \pagebreak
@@ -54,26 +77,15 @@ g + geom_boxplot() + xlab("Transmission") + ylab("MPG") +
   ggtitle("Fuel Efficiency of Automatic and Manual Cars")
 ```
 
-##Figure 2
-
-```{r Simple Linear Model, echo = TRUE}
-fit <- lm(mpg ~ am, data = mtcars)
-summary(fit)$coefficients
-```
-
-##Figure 3 (Variables correlated with transmission type)
+##Figure 2 (Variables correlated with mpg and transmission)
 ```{r Correlation Values, echo = TRUE}
 #old.mtcars contains original dataset with am, cyl, and vs not converted to factor variables
-cor(old.mtcars)["am", ]
+cors <- data.frame(Transmission = cor(old.mtcars)["am", ],
+                   MPG = cor(old.mtcars)["mpg", ])
+kable(cors)
 ```
 
-##Figure 4 (Variables correlated with mpg)
-
-```{r Correlation Values 2, echo = TRUE}
-cor(old.mtcars)["mpg", ]
-```
-
-##Figure 5
+##Figure 3
 ```{r Transmission facts, echo = TRUE}
 source("multiplot.R")
 p1 <- ggplot(mtcars, aes(x = am, y = wt)) + geom_boxplot() + ggtitle("Weight")
@@ -83,9 +95,29 @@ p4 <- ggplot(mtcars, aes(x = am, y = hp)) + geom_boxplot() + ggtitle("Horsepower
 multiplot(p1, p2, p3, p4, cols = 2)
 ```
 
-##Figure 6
+##Figure 4
 ```{r Weight and Transmission, echo = TRUE}
 g <- ggplot(mtcars, aes(x = wt, y = mpg, color = am))
 g + geom_point() + geom_smooth(method = "lm") + ggtitle("Car Weight and MPG") + 
   xlab("Weight (1000s of lbs)") + ylab("MPG")
+```
+
+##Figure 5 (Model 1)
+```{r Linear Models, echo = TRUE}
+fit1 <- lm(mpg ~ am, data = mtcars)
+fit2 <- lm(mpg ~ ., data = mtcars)
+fit3 <- lm(mpg ~ am + wt + am * wt, data = mtcars)
+```
+```{r Coefficients1, echo = FALSE}
+kable(summary(fit1)$coefficients)
+```
+
+##Figure 6 (Model 2)
+```{r Coefficients2, echo = FALSE}
+kable(summary(fit2)$coefficients)
+```
+
+##Figure 7 (Model 3)
+```{r Coefficients3, echo = FALSE}
+kable(summary(fit3)$coefficients)
 ```
