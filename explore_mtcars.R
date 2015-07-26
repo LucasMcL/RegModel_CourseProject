@@ -47,3 +47,6 @@ summary(fit1)$coefficients
 summary(fit2)$coefficients
 summary(fit3)$coefficients
 
+fit1.df <- data.frame(residuals = resid(fit1), fitted = predict(fit1))
+g <- ggplot(fit1.df, aes(x = fitted, y = resid))
+g + geom_point() + geom_abline(intercept = 0, slope = 0)

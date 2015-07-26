@@ -35,7 +35,7 @@ This document contains an analysis of the mtcars dataset included in R.  In it, 
 1.  Is an automatic or manual transmission better for mpg?
 2.  Quantify the MPG difference between automatic and manual transmissions.
 
-In short, it is easy to see that cars that manual cars get better MPG.  Understanding why though is a more complicated matter.  I believe the weight of the car is really the most important factor and in this document I hope to qauntify the MPG difference between automatic and manual cars by using linear models
+In short, it is easy to see that cars that manual cars get better MPG.  Understanding why though is a more complicated matter.  I believe the weight of the car is really the most important factor and through using linear models, predict that the true difference in MPG between an automatic and manual car, if all else in the car were the same, is somewhere between 3 and 7 mpg.
 
 ## MPG vs. Transmission Type
 An initial boxplot showing mpg for both automatic and manual cars (fig 1) shows that manual cars have much better MPG on average.  Specifically, our observed difference is `r round(mean(mtcars[mtcars$am == "Manual", ]$mpg) - mean(mtcars[mtcars$am == "Automatic", ]$mpg), 1)` MPG.  This is helpful initial information, but this observed difference can only tell us so much.  The transmission system of a car effects things like car weight, rear axle ratio, and number of forward gears.  These things have effects on engine size, horsepower, and so on.  To figure out which variables are really causing this noticable change in MPG, let's examine what variables are correlated with MPG and transmission type and then fit a linear model using that information.
@@ -60,10 +60,15 @@ This model (fig 5) shows that the average MPG for automatic cars is `r round(ct1
 This model (fig 6) takes into account all varaibles available.  Under this model, our estimate for the difference in MPG between a manual and automatic car is much lower at `r round(ct2[10, 1], 1)` and our confidence interval is (`r round(ct2[10, 1] + c(-2, 2) * ct2[10, 2], 1)`)  I believe this lower value is caused by two things.  Firstly, the model takes into account counfounding variables that really may be having a greater impact on on MPG, thus taking emphasis off the transmission variable.  Second, the model introduces greater variance in our regression variables due to the larger number of predictor variables included.
 
 ####Model 3
-This final model (fig 7) seeks to describe how weight affects mpg for both automatic and manual cars.  This model shows us that automatic cars have a `r round(ct3[3, 1], 1)` decrease in MPG for every 1000lb increase in car weight, whereas manual cars have a 'r round `r round(ct3[3, 1], 1)` + (`r round(ct3[4, 1], 1)`), or `r round(ct3[3, 1] + ct3[4, 1], 1)` decrease in MPG for every 1000lb increase in car weight.  In other words, manual cars handle car weight increase poorly, but since manual cars tend to be lighter they still come out ahead in MPG.
+This final model (fig 7) seeks to describe how weight affects mpg for both automatic and manual cars.  This model shows us that automatic cars have a `r round(ct3[3, 1], 1)` decrease in MPG for every 1000lb increase in car weight, whereas manual cars have a `r round(ct3[3, 1], 1)` + (`r round(ct3[4, 1], 1)`), or `r round(ct3[3, 1] + ct3[4, 1], 1)` decrease in MPG for every 1000lb increase in car weight.  In other words, manual cars handle car weight increase poorly, but since manual cars tend to be lighter they still come out ahead in MPG.
 
 ###Diagnostics
-Lastly, let's briefly look at some residual plots and variance diagnostics of our models to help diagnose their efficacy.  
+Lastly, let's briefly look at some residual plots and variance diagnostics of our models to help diagnose their efficacy.  We'll specifically look at models 1 and 2 since those try and quantify the MPG difference by transmission type.  We don't see much variation in these residual plots (fig 8), which is a good thing.  In model 1, we can see that there is less variation around the lower mpg, which would correspond to automatic cars and greater variance around the higher mpg, which would correspond to manual cars.  This is interesting, but not necessarily a sign of bad model fit.  In model 2, there isn't much of a pattern evident.
+
+Let's also look at our $R^2$ values for models 1 and 2.  This is a way of describing how much of the total variance in MPG was explained by our model.  For model 1, the $R^2$ value was `r round(summary(fit1)$r.squared, 2)` and for model 2 it was `r round(summary(fit2)$r.squared, 2)`.  Thus, it's clear that our second model explains much more of the variation than model 1.
+
+## Conclusion
+In conclusion, it is clear that manual cars get better gas mileage, and I believe that car weight is the biggest reason why.  In addition, if I were to quantify this change in MPG, I would do so by taking the overlapping section of my confidence intervals and giving a final estimate of (`r round(ct1[2, 1] - 2 * ct1[2, 2], 1)`, `r round(ct2[10, 1] + 2 * ct2[10, 2], 1)`).
 
 
 \pagebreak
@@ -78,7 +83,7 @@ g + geom_boxplot() + xlab("Transmission") + ylab("MPG") +
 ```
 
 ##Figure 2 (Variables correlated with mpg and transmission)
-```{r Correlation Values, echo = TRUE}
+```{r Correlation Values, echo = FALSE}
 #old.mtcars contains original dataset with am, cyl, and vs not converted to factor variables
 cors <- data.frame(Transmission = cor(old.mtcars)["am", ],
                    MPG = cor(old.mtcars)["mpg", ])
@@ -86,7 +91,7 @@ kable(cors)
 ```
 
 ##Figure 3
-```{r Transmission facts, echo = TRUE}
+```{r Transmission facts, echo = FALSE}
 source("multiplot.R")
 p1 <- ggplot(mtcars, aes(x = am, y = wt)) + geom_boxplot() + ggtitle("Weight")
 p2 <- ggplot(mtcars, aes(x = am, y = drat)) + geom_boxplot() + ggtitle("Rear Axle Ratio")
@@ -96,7 +101,7 @@ multiplot(p1, p2, p3, p4, cols = 2)
 ```
 
 ##Figure 4
-```{r Weight and Transmission, echo = TRUE}
+```{r Weight and Transmission, echo = FALSE}
 g <- ggplot(mtcars, aes(x = wt, y = mpg, color = am))
 g + geom_point() + geom_smooth(method = "lm") + ggtitle("Car Weight and MPG") + 
   xlab("Weight (1000s of lbs)") + ylab("MPG")
@@ -120,4 +125,17 @@ kable(summary(fit2)$coefficients)
 ##Figure 7 (Model 3)
 ```{r Coefficients3, echo = FALSE}
 kable(summary(fit3)$coefficients)
+```
+
+##Figure 8 (Residual Plots)
+```{r Residual Plots, echo = FALSE}
+fit1.df <- data.frame(residuals = resid(fit1), fitted = predict(fit1))
+fit2.df <- data.frame(residuals = resid(fit2), fitted = predict(fit2))
+
+p1 <- ggplot(fit1.df, aes(x = fitted, y = residuals)) + geom_point() +
+  geom_abline(intercept = 0, slope = 0) + ggtitle("Model 1")
+p2 <- ggplot(fit2.df, aes(x = fitted, y = residuals)) + geom_point() +
+  geom_abline(intercept = 0, slope = 0) + ggtitle("Model 2")
+ 
+multiplot(p1, p2, cols = 2)
 ```
